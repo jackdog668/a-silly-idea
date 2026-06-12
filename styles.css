@@ -75,11 +75,11 @@ body {
   mix-blend-mode: overlay;
 }
 
-/* ---- Scroll progress rail ---- */
+/* ---- Scroll progress rail (right edge, where a scrollbar belongs) ---- */
 .rail {
   position: fixed;
-  top: 0; left: 0;
-  width: 2px;
+  top: 0; right: 0;
+  width: 3px;
   height: 100vh;
   height: 100dvh;
   background: var(--line);
