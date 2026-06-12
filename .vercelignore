@@ -1,0 +1,4 @@
+# local-only dev helpers — not needed on the static deployment
+server.js
+.claude/
+.playwright-mcp/

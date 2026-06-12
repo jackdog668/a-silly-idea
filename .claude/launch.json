@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "silly-idea",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["server.js"],
+      "port": 4173,
+      "autoPort": false
+    }
+  ]
+}

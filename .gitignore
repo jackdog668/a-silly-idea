@@ -1,0 +1,15 @@
+# dependencies
+node_modules/
+
+# vercel
+.vercel/
+
+# os / editor
+.DS_Store
+Thumbs.db
+
+# logs & test artifacts
+*.log
+.playwright-mcp/
+*.jpeg
+*.png

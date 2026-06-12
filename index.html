@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0c" />
+  <title>A Silly Idea</title>
+  <meta name="description" content="The things that changed everything started embarrassingly small. An interactive scroll experiment about how one ridiculous idea becomes a movement — told through the true stories of the people who looked a little dumb first." />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="A Silly Idea" />
+  <meta property="og:description" content="Post-its. Hashtags. Spanx. Every movement started as a thought too small to take seriously. Scroll slowly." />
+  <meta property="og:type" content="website" />
+
+  <!-- Inline ember favicon — no extra file, no 404 -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='5' fill='%23ff9d4d'/%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%23ff9d4d' stroke-opacity='0.35'/%3E%3C/svg%3E" />
+
+  <!-- Fonts: Fraunces (editorial display) + Space Grotesk (UI). -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,400&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <canvas id="field" aria-hidden="true"></canvas>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="rail" aria-hidden="true"><span class="rail__fill" id="railFill"></span></div>
+  <div class="phase" id="phaseLabel" aria-hidden="true">the spark</div>
+
+  <main>
+    <!-- 01 — HERO -->
+    <section class="panel panel--hero" data-phase="0">
+      <div class="panel__inner reveal">
+        <p class="eyebrow">A&nbsp;Silly&nbsp;Idea</p>
+        <h1 class="display">
+          Every avalanche<br />
+          starts as a single,<br />
+          <em>ridiculous</em> flake.
+        </h1>
+        <p class="lede">Scroll slowly. Watch what one small thought becomes — and meet the people who looked a little dumb first.</p>
+        <div class="cue" aria-hidden="true">
+          <span>scroll</span>
+          <span class="cue__line"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 — SPARK -->
+    <section class="panel" data-phase="1">
+      <div class="panel__inner reveal">
+        <p class="kicker">01 — the spark</p>
+        <h2 class="display display--md">It begins stupidly small.</h2>
+        <p class="body">
+          A shower thought. A 2&nbsp;a.m. note you're embarrassed to reread. The kind of
+          idea you almost delete before anyone sees it. That's the one. The silly ones are
+          the only ones light enough to actually move.
+        </p>
+      </div>
+    </section>
+
+    <!-- 03 — WHISPER -->
+    <section class="panel" data-phase="1">
+      <div class="panel__inner reveal">
+        <p class="kicker">02 — the whisper</p>
+        <h2 class="display display--md">Say it out loud anyway.</h2>
+        <p class="body">
+          Most ideas die in the throat — not because they're wrong, but because saying them
+          feels foolish. A thought you keep to yourself weighs nothing and moves nothing.
+          The whisper is the whole gamble.
+        </p>
+      </div>
+    </section>
+
+    <!-- 04 — PROOF / TRANSITION -->
+    <section class="panel" data-phase="2">
+      <div class="panel__inner reveal">
+        <p class="kicker">— and here's the secret</p>
+        <h2 class="display display--md">It has happened before.<br />Over and over.</h2>
+        <p class="body">
+          Every movement you've ever admired was, at some point, one person with a thought
+          too small to take seriously. That's not the exception. That's the recipe.
+          Watch what these flakes became.
+        </p>
+      </div>
+    </section>
+
+    <!-- 05 — POST-IT -->
+    <section class="panel panel--story" data-phase="2">
+      <div class="panel__inner reveal">
+        <p class="kicker">1968 — a glue that didn't work</p>
+        <h2 class="display display--md outcome">50 billion sold<br />every year.</h2>
+        <p class="body">
+          Spencer Silver invented an adhesive so weak his own company filed it under
+          <em>failure</em>. For five years it sat in a drawer marked useless — until a colleague
+          used it to hold his place in a hymnal. The failure became the <strong>Post-it Note</strong>.
+        </p>
+      </div>
+    </section>
+
+    <!-- 06 — HASHTAG -->
+    <section class="panel panel--story panel--right" data-phase="3">
+      <div class="panel__inner reveal">
+        <p class="kicker">August 23, 2007 — one tweet</p>
+        <h2 class="display display--md outcome">The syntax of<br />the internet.</h2>
+        <p class="body">
+          Chris Messina asked a single question out loud: <em>"what about using # for groups?"</em>
+          Twitter told him it was too nerdy to ever catch on. He posted it anyway.
+          You have used his silly idea today — the <strong>hashtag</strong>.
+        </p>
+      </div>
+    </section>
+
+    <!-- 07 — SPANX -->
+    <section class="panel panel--story" data-phase="3">
+      <div class="panel__inner reveal">
+        <p class="kicker">$5,000 in savings and a pair of scissors</p>
+        <h2 class="display display--md outcome">A billion-dollar<br />company, owned outright.</h2>
+        <p class="body">
+          Sara Blakely cut the feet off her pantyhose to look good at a party. No fashion
+          training, no investors, no permission. Just a dumb little fix to her own problem —
+          which turned out to be everyone's problem. She named it <strong>Spanx</strong>.
+        </p>
+      </div>
+    </section>
+
+    <!-- 08 — AIRBNB -->
+    <section class="panel panel--story panel--right" data-phase="3">
+      <div class="panel__inner reveal">
+        <p class="kicker">2008 — three air mattresses on a floor</p>
+        <h2 class="display display--md outcome">Millions of homes,<br />every country on earth.</h2>
+        <p class="body">
+          Two broke roommates couldn't make rent, so they charged strangers to sleep on
+          air mattresses in their living room. Investor after investor passed:
+          <em>"nobody will stay in a stranger's home."</em> Everybody did. They called it <strong>Airbnb</strong>.
+        </p>
+      </div>
+    </section>
+
+    <!-- 09 — ICE BUCKET -->
+    <section class="panel panel--story" data-phase="4">
+      <div class="panel__inner reveal">
+        <p class="kicker">2014 — a dare with a bucket of ice water</p>
+        <h2 class="display display--md outcome">$115 million.<br />A genetic breakthrough.</h2>
+        <p class="body">
+          It was goofy. People dumped ice water on their heads and tagged three friends.
+          Critics called it pointless. That goofy chain helped fund the discovery of a gene
+          tied to ALS — science the disease had been waiting decades for. The
+          <strong>Ice Bucket Challenge</strong>.
+        </p>
+      </div>
+    </section>
+
+    <!-- 10 — AVALANCHE -->
+    <section class="panel" data-phase="3">
+      <div class="panel__inner reveal">
+        <p class="kicker">03 — the avalanche</p>
+        <h2 class="display display--md">None of them asked permission.</h2>
+        <p class="body">
+          One person repeats it. Then five. Then a number you stop being able to count.
+          Curiosity is contagious — it doesn't wait to be approved, it just spreads.
+        </p>
+        <div class="counter" aria-hidden="true">
+          <span class="counter__num" id="counter">1</span>
+          <span class="counter__label">carrying it now</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11 — WAVE -->
+    <section class="panel" data-phase="4">
+      <div class="panel__inner reveal">
+        <p class="kicker">04 — the wave</p>
+        <h2 class="display display--md">It stops being yours.</h2>
+        <p class="body">
+          Somewhere in the noise it changes shape. It becomes a rhythm other people move to.
+          You couldn't stop it now if you tried — and that's exactly when you know it was
+          never really about you.
+        </p>
+      </div>
+    </section>
+
+    <!-- 12 — COMMUNITY -->
+    <section class="panel" data-phase="5">
+      <div class="panel__inner reveal">
+        <p class="kicker">05 — the we</p>
+        <h2 class="display display--md">And then it's a <em>we</em>.</h2>
+        <p class="body">
+          The idea finds its people. They connect to it — and through it, to each other.
+          What started as one flake in the dark is now a constellation that throws its
+          own light.
+        </p>
+      </div>
+    </section>
+
+    <!-- 13 — META -->
+    <section class="panel" data-phase="6">
+      <div class="panel__inner reveal">
+        <p class="kicker">— by the way</p>
+        <h2 class="display display--md">This website is a silly idea too.</h2>
+        <p class="body">
+          Somebody thought "what if scrolling could feel like a thought becoming a movement,"
+          felt a little dumb about it, and built it anyway. You're standing inside the proof.
+        </p>
+      </div>
+    </section>
+
+    <!-- 14 — INVITATION -->
+    <section class="panel panel--invite" data-phase="6">
+      <div class="panel__inner reveal">
+        <p class="kicker">your turn</p>
+        <h2 class="display display--md">So. What's yours?</h2>
+        <p class="body body--tight">
+          Post-its. Hashtags. Spanx. Every one of them started exactly where you are right
+          now — a thought that felt too small to matter, and one person willing to look a
+          little dumb. Type yours. Watch it join the field.
+        </p>
+
+        <form class="spark-form" id="sparkForm" autocomplete="off">
+          <label class="visually-hidden" for="sparkInput">Your silly idea</label>
+          <input
+            class="spark-form__input"
+            id="sparkInput"
+            type="text"
+            maxlength="120"
+            placeholder="the idea you almost didn't type…"
+          />
+          <button class="spark-form__btn" type="submit">let it catch</button>
+        </form>
+
+        <p class="spark-status" id="sparkStatus" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer__inner">
+        <p class="footer__mark">A Silly Idea</p>
+        <p class="footer__sub">an experiment in curiosity — built because it sounded a little dumb. that's usually the tell.</p>
+      </div>
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,357 @@
+/* =========================================================================
+   A SILLY IDEA — styles
+   Palette: near-black field, warm ember accent cooling to soft starlight.
+   One accent family (amber → starlight), low glow, no neon. Serif display
+   (Fraunces) for the philosophical lines; Space Grotesk for UI text.
+   ========================================================================= */
+
+:root {
+  --bg:        #0a0a0c;   /* never pure black */
+  --bg-2:      #101015;
+  --ink:       #f4f1ea;   /* warm off-white */
+  --ink-soft:  #b9b4ab;
+  --ink-faint: #76726b;
+  --ember:     #ff9d4d;   /* warm spark */
+  --ember-deep:#e8773a;
+  --starlight: #cfe3ff;   /* the cooled, "movement" tone */
+  --line:      rgba(244, 241, 234, 0.08);
+
+  --maxw: 1240px;
+  --pad: clamp(1.25rem, 5vw, 4rem);
+
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* ---- The persistent canvas, pinned behind everything ---- */
+#field {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  display: block;
+  /* radial vignette so particles feel like they're emerging from deep space */
+  background:
+    radial-gradient(120% 90% at 50% 38%, #14131a 0%, var(--bg) 60%, #060608 100%);
+}
+
+/* ---- Film grain: fixed, pointer-events none → no scroll repaint cost ---- */
+.grain {
+  position: fixed;
+  inset: -50%;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+/* ---- Scroll progress rail ---- */
+.rail {
+  position: fixed;
+  top: 0; left: 0;
+  width: 2px;
+  height: 100vh;
+  height: 100dvh;
+  background: var(--line);
+  z-index: 5;
+}
+.rail__fill {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 0%;
+  background: linear-gradient(var(--ember), var(--starlight));
+  box-shadow: 0 0 12px rgba(255, 157, 77, 0.5);
+}
+
+/* ---- Travelling phase label ---- */
+.phase {
+  position: fixed;
+  bottom: clamp(1rem, 3vh, 2rem);
+  right: var(--pad);
+  z-index: 5;
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  transition: color 0.6s var(--ease);
+  font-feature-settings: "tnum";
+}
+
+/* ---- Layout: panels stacked over the canvas ---- */
+main { position: relative; z-index: 3; }
+
+.panel {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  padding: clamp(4rem, 12vh, 9rem) var(--pad);
+}
+
+.panel__inner {
+  width: 100%;
+  max-width: var(--maxw);
+  margin: 0 auto;
+}
+
+/* Asymmetric placement: content lives on a 7-col band, offset left.
+   (Anti-center bias per design baseline.) */
+.panel:not(.panel--hero) .panel__inner {
+  max-width: 760px;
+  margin-left: clamp(0px, 8vw, 180px);
+}
+
+/* ---- Reveal-on-scroll ---- */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 1s var(--ease), transform 1.1s var(--ease);
+  will-change: opacity, transform;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---- Typography ---- */
+.eyebrow {
+  font-size: 0.78rem;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--ember);
+  margin: 0 0 1.6rem;
+}
+
+.kicker {
+  font-size: 0.74rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 1.4rem;
+}
+
+.display {
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 400;
+  font-optical-sizing: auto;
+  letter-spacing: -0.015em;
+  line-height: 1.02;
+  margin: 0;
+  font-size: clamp(2.7rem, 8vw, 6.4rem);
+}
+.display em {
+  font-style: italic;
+  color: var(--ember);
+}
+.display--md {
+  font-size: clamp(2.1rem, 6vw, 4.4rem);
+  line-height: 1.05;
+}
+
+.lede {
+  margin: 2rem 0 0;
+  font-size: clamp(1rem, 1.6vw, 1.2rem);
+  color: var(--ink-soft);
+  max-width: 38ch;
+}
+
+.body {
+  margin: 1.8rem 0 0;
+  font-size: clamp(1.05rem, 1.7vw, 1.32rem);
+  line-height: 1.72;
+  color: var(--ink-soft);
+  max-width: 46ch;
+}
+.body--tight { max-width: 42ch; }
+
+/* ---- Hero specifics ---- */
+.panel--hero .panel__inner { max-width: var(--maxw); }
+
+.cue {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-top: 3.4rem;
+  color: var(--ink-faint);
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+.cue__line {
+  position: relative;
+  width: 1px;
+  height: 56px;
+  overflow: hidden;
+  background: var(--line);
+}
+.cue__line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(var(--ember), transparent);
+  animation: cueDrop 2.4s var(--ease) infinite;
+}
+@keyframes cueDrop {
+  0%   { transform: translateY(-100%); }
+  60%  { transform: translateY(100%); }
+  100% { transform: translateY(100%); }
+}
+
+/* ---- Story panels (the historical proof) ---- */
+/* Outcome lines stay solid + bright — hierarchy via scale and contrast, not
+   gradient-text tricks. The ember accent lives in the origin kicker + keyword. */
+.outcome { color: var(--ink); }
+.panel--story .body strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.panel--story .body em { color: var(--ember); font-style: italic; }
+
+/* Asymmetry: push every other story block to the right side on desktop */
+.panel--right .panel__inner {
+  margin-left: auto !important;
+  margin-right: clamp(0px, 8vw, 180px);
+}
+
+/* ---- Avalanche counter ---- */
+.counter {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-top: 2.6rem;
+  flex-wrap: wrap;
+}
+.counter__num {
+  font-family: "Fraunces", Georgia, serif;
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(2.6rem, 7vw, 5rem);
+  line-height: 1;
+  color: var(--ink);
+  text-shadow: 0 0 30px rgba(255, 157, 77, 0.25);
+}
+.counter__label {
+  font-size: 0.78rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* ---- Invitation form ---- */
+.panel--invite { min-height: 110vh; min-height: 110dvh; }
+
+.spark-form {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 2.4rem;
+  max-width: 560px;
+  flex-wrap: wrap;
+}
+.spark-form__input {
+  flex: 1 1 280px;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.95rem 1.1rem;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 1rem;
+  transition: border-color 0.4s var(--ease), background 0.4s var(--ease);
+}
+.spark-form__input::placeholder { color: var(--ink-faint); }
+.spark-form__input:focus {
+  outline: none;
+  border-color: rgba(255, 157, 77, 0.6);
+  background: rgba(255, 157, 77, 0.05);
+}
+.spark-form__btn {
+  flex: 0 0 auto;
+  background: var(--ink);
+  color: #15110c;
+  border: none;
+  border-radius: 14px;
+  padding: 0.95rem 1.5rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: transform 0.18s var(--ease), background 0.4s var(--ease), box-shadow 0.4s var(--ease);
+}
+.spark-form__btn:hover {
+  background: var(--ember);
+  box-shadow: 0 8px 30px rgba(255, 157, 77, 0.28);
+}
+.spark-form__btn:active { transform: translateY(1px) scale(0.985); }
+
+.spark-status {
+  margin-top: 1.3rem;
+  min-height: 1.4rem;
+  font-size: 0.95rem;
+  color: var(--ember);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
+}
+.spark-status.show { opacity: 1; transform: none; }
+
+/* ---- Footer ---- */
+.footer {
+  position: relative;
+  z-index: 3;
+  padding: clamp(4rem, 10vh, 8rem) var(--pad) clamp(3rem, 8vh, 6rem);
+  border-top: 1px solid var(--line);
+}
+.footer__inner { max-width: var(--maxw); margin: 0 auto; }
+.footer__mark {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 1.5rem;
+  margin: 0;
+}
+.footer__sub {
+  margin: 0.5rem 0 0;
+  color: var(--ink-faint);
+  font-size: 0.9rem;
+}
+
+/* ---- a11y helper ---- */
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap; border: 0;
+}
+
+/* ---- Mobile: collapse the asymmetric offset ---- */
+@media (max-width: 768px) {
+  .panel:not(.panel--hero) .panel__inner { margin-left: 0; }
+  .phase { display: none; }
+}
+
+/* ---- Respect reduced-motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  .reveal { transition: opacity 0.6s ease; transform: none; }
+  .cue__line::after { animation: none; }
+  * { scroll-behavior: auto !important; }
+}
