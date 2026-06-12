@@ -13,3 +13,5 @@ Thumbs.db
 .playwright-mcp/
 *.jpeg
 *.png
+
+.vercel
