@@ -1,6 +1,11 @@
 # dependencies
 node_modules/
 
+# secrets — never commit real keys (template .env.example is allowed)
+.env
+.env.*
+!.env.example
+
 # vercel
 .vercel/
 

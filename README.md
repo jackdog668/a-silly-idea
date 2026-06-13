@@ -16,7 +16,8 @@ input to drop your own spark into the field.
 | ~40% | **the avalanche** | it catches — particles multiply and cascade; a live counter climbs |
 | ~65% | the wave | they snap into a moving rhythm |
 | ~90% | **the we** | they settle into a connected constellation, warm ember cooled to starlight |
-| end | your turn | type your own idea → it drops a new spark into the field |
+| end | your turn | type your own idea → it's saved to a **shared nexus** everyone can read |
+| nexus | the wall | a browsable grid of every real idea people have added, with a live count |
 
 ## How it works (the one trick worth stealing)
 
@@ -31,50 +32,86 @@ disconnected slides.
 
 ## Run it
 
-It's a static site — no build, no dependencies, no backend.
+The front-end is still a static site. The new part is a small backend: one
+serverless function in `api/` that saves and reads ideas, backed by **Neon**
+(serverless Postgres). The browser never touches the database or any secret —
+the function is the only door, and Neon exposes no public client at all.
 
-**Easiest:** open `index.html` directly in a browser.
+**1. Make a Neon database.** Easiest: Vercel dashboard → this project →
+**Storage** → **Create Database** → **Neon Postgres**. Vercel auto-sets
+`DATABASE_URL`. (Or create one at [neon.tech](https://neon.tech) and copy the
+connection string.)
 
-**With a local server** (recommended, avoids any file:// quirks):
+**2. Set the three env vars** (in Vercel → Settings → Environment Variables):
+
+| Var | Where |
+|-----|-------|
+| `DATABASE_URL` | Neon connection string (auto-set by the Vercel integration) |
+| `OPENAI_API_KEY` | OpenAI — used only for the free moderation endpoint |
+| `IP_HASH_SALT` | any long random string (`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`) |
+
+**3. Run locally** (functions need the Vercel dev runtime, not `node server.js`):
 
 ```bash
-node server.js
-# → http://localhost:4173
+npm install
+vercel env pull .env.local   # mirror the three vars locally
+npm run setup-db             # create the ideas table (run once)
+npm run dev                  # vercel dev → http://localhost:3000
 ```
 
-Any static host works too:
-
-```bash
-npx serve .
-```
+> `node server.js` still serves the static files for a quick front-end preview,
+> but the `/api/ideas` endpoint only runs under `vercel dev`.
 
 ## Deploy
 
-Drop the folder on Vercel, Netlify, or any static host. Nothing to configure.
+The three env vars are already in your Vercel project, so just ship. Static
+files + the `api/` function deploy together — no framework preset.
 
 ```bash
-# Vercel
-vercel --prod
-
-# Netlify
-netlify deploy --prod --dir .
+npm run deploy       # vercel --prod
 ```
+
+## The data model
+
+One Neon table, `ideas`. No RLS needed — unlike Supabase, Neon has no anonymous
+HTTP client, so the only way to the table is the connection string inside the
+serverless function:
+
+```sql
+create table ideas (
+  id uuid primary key default gen_random_uuid(),
+  text text not null check (char_length(text) between 1 and 280),
+  name text check (name is null or char_length(name) <= 40),
+  status text not null default 'published' check (status in ('published','held','rejected')),
+  ip_hash text,
+  created_at timestamptz not null default now()
+);
+```
+
+`npm run setup-db` creates this for you. Every submission is validated (Zod
+`.strict()`, parameterized queries), rate-limited per device by counting recent
+rows, and run through AI moderation. Clean ideas publish instantly; flagged ones
+are held and never shown.
 
 ## Files
 
 | File | Role |
 |------|------|
-| `index.html` | structure + copy (the 8 chapters) |
+| `index.html` | structure + copy + the nexus section |
 | `styles.css` | the dark editorial look — Fraunces display, Space Grotesk UI |
-| `app.js` | the field engine — particles, phases, scroll, the live input |
-| `server.js` | tiny static server for local preview (optional) |
+| `app.js` | the field engine + the form + the nexus wall renderer |
+| `api/ideas.js` | the only server surface — validate, rate-limit, moderate, save/read |
+| `server.js` | tiny static server for previewing the front-end only (no API) |
 
 ## Notes
 
-- **No backend, no data, no secrets.** It's pure view-layer. Submitted ideas
-  never leave the browser; a per-device count is kept in `localStorage` only.
+- **Secrets stay server-side.** All keys are server-only env vars validated at
+  startup. The browser only ever calls `/api/ideas` — it never sees a key or
+  touches the database.
+- **Moderated + rate-limited.** A public submission wall gets abused; every idea
+  is AI-screened and capped at 5 per 10 min per device.
 - **Accessible-minded:** respects `prefers-reduced-motion`, the field is
-  `aria-hidden`, the form has a real label and a live status region.
+  `aria-hidden`, the form has real labels and a live status region.
 - **Self-healing canvas:** the field re-measures every frame, so it survives
   odd load orders and window resizes without ever getting stuck at the wrong size.
 

@@ -1,0 +1,15 @@
+{
+  "name": "a-silly-idea",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A scroll-driven story about small ideas becoming movements — now with a shared nexus where visitors add their own.",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod",
+    "setup-db": "node scripts/setup-db.js"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.4",
+    "zod": "^3.23.8"
+  }
+}

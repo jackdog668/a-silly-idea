@@ -222,13 +222,39 @@
             class="spark-form__input"
             id="sparkInput"
             type="text"
-            maxlength="120"
+            maxlength="280"
             placeholder="the idea you almost didn't type…"
           />
-          <button class="spark-form__btn" type="submit">let it catch</button>
+          <label class="visually-hidden" for="sparkName">Your name (optional)</label>
+          <input
+            class="spark-form__input spark-form__input--name"
+            id="sparkName"
+            type="text"
+            maxlength="40"
+            placeholder="your name (optional)"
+          />
+          <button class="spark-form__btn" id="sparkBtn" type="submit">let it catch</button>
         </form>
 
         <p class="spark-status" id="sparkStatus" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <!-- 15 — THE NEXUS (every spark anyone has added) -->
+    <section class="panel panel--nexus" data-phase="6">
+      <div class="panel__inner reveal">
+        <p class="kicker">the nexus so far</p>
+        <h2 class="display display--md">Every flake that caught.</h2>
+        <p class="body body--tight">
+          These aren't ours. They're real ideas real people typed when they decided to
+          stop keeping them in their throat. <span class="nexus__count" id="nexusCount">…</span>
+        </p>
+
+        <div class="nexus__grid" id="nexusGrid" aria-live="polite">
+          <p class="nexus__empty" id="nexusEmpty">lighting the field…</p>
+        </div>
+
+        <button class="nexus__more" id="nexusMore" type="button" hidden>show more</button>
       </div>
     </section>
 

@@ -327,6 +327,77 @@ main { position: relative; z-index: 3; }
 }
 .spark-status.show { opacity: 1; transform: none; }
 
+.spark-form__input--name { flex: 0 1 200px; }
+
+/* ---- The nexus: the shared wall of real ideas ---- */
+.panel--nexus { min-height: auto; padding-bottom: clamp(5rem, 12vh, 9rem); align-items: flex-start; }
+.panel--nexus .panel__inner { max-width: var(--maxw); }
+
+.nexus__count {
+  display: block;
+  margin-top: 0.8rem;
+  color: var(--ember);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.95rem;
+}
+
+.nexus__grid {
+  margin-top: 2.6rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 1rem;
+}
+
+.nexus__empty {
+  grid-column: 1 / -1;
+  color: var(--ink-faint);
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+}
+
+.idea-card {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 1.2rem 1.3rem 1.05rem;
+  transition: border-color 0.4s var(--ease), transform 0.4s var(--ease), background 0.4s var(--ease);
+}
+.idea-card:hover {
+  border-color: rgba(255, 157, 77, 0.32);
+  background: rgba(255, 157, 77, 0.04);
+  transform: translateY(-2px);
+}
+.idea-card__text {
+  margin: 0;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 1.12rem;
+  line-height: 1.45;
+  color: var(--ink);
+  overflow-wrap: anywhere; /* long unbroken strings can't blow out the card */
+}
+.idea-card__meta {
+  margin: 0.85rem 0 0;
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+  text-transform: lowercase;
+}
+.idea-card__name { color: var(--ink-soft); }
+
+.nexus__more {
+  margin-top: 2rem;
+  background: transparent;
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.8rem 1.4rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.4s var(--ease), color 0.4s var(--ease);
+}
+.nexus__more:hover { border-color: rgba(255, 157, 77, 0.5); color: var(--ink); }
+
 /* ---- Footer ---- */
 .footer {
   position: relative;

@@ -385,17 +385,130 @@
   }
 
   // -------------------------------------------------------------------------
-  // the interactive form
+  // the nexus — shared wall of ideas, read from + written to /api/ideas
+  // -------------------------------------------------------------------------
+  const nexus = (() => {
+    const grid = document.getElementById("nexusGrid");
+    const countEl = document.getElementById("nexusCount");
+    const emptyEl = document.getElementById("nexusEmpty");
+    const moreBtn = document.getElementById("nexusMore");
+
+    // friendly relative time without pulling in a library
+    function ago(iso) {
+      const then = new Date(iso).getTime();
+      const s = Math.max(0, Math.round((Date.now() - then) / 1000));
+      if (s < 45) return "just now";
+      const m = Math.round(s / 60);
+      if (m < 60) return `${m}m ago`;
+      const h = Math.round(m / 60);
+      if (h < 24) return `${h}h ago`;
+      const d = Math.round(h / 24);
+      if (d < 30) return `${d}d ago`;
+      return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    }
+
+    // build a card with textContent only — user text NEVER touches innerHTML (XSS)
+    function card(idea) {
+      const el = document.createElement("article");
+      el.className = "idea-card";
+
+      const p = document.createElement("p");
+      p.className = "idea-card__text";
+      p.textContent = idea.text;
+      el.appendChild(p);
+
+      const meta = document.createElement("p");
+      meta.className = "idea-card__meta";
+      const who = document.createElement("span");
+      who.className = "idea-card__name";
+      who.textContent = idea.name ? `— ${idea.name}` : "— anonymous";
+      meta.appendChild(who);
+      const t = document.createElement("time");
+      t.textContent = ` · ${ago(idea.created_at)}`;
+      meta.appendChild(t);
+      el.appendChild(meta);
+
+      return el;
+    }
+
+    function setCount(total) {
+      if (!countEl) return;
+      const n = total.toLocaleString("en-US");
+      countEl.textContent = total === 1
+        ? `1 spark in the field, and counting.`
+        : `${n} sparks in the field, and counting.`;
+    }
+
+    function clearEmpty() {
+      if (emptyEl && emptyEl.parentNode) emptyEl.remove();
+    }
+
+    function render(ideas, where) {
+      if (!grid || !ideas || !ideas.length) return;
+      clearEmpty();
+      ideas.forEach((idea) => {
+        const el = card(idea);
+        if (where === "prepend") grid.insertBefore(el, grid.firstChild);
+        else grid.appendChild(el);
+      });
+    }
+
+    function showEmpty(msg) {
+      if (emptyEl) emptyEl.textContent = msg;
+    }
+
+    let cursor = null;
+    let loading = false;
+
+    async function loadPage(before) {
+      if (loading) return;
+      loading = true;
+      try {
+        const url = before
+          ? `/api/ideas?limit=40&before=${encodeURIComponent(before)}`
+          : `/api/ideas?limit=40`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`GET ${res.status}`);
+        const data = await res.json();
+        render(data.ideas, "append");
+        setCount(data.total || 0);
+        cursor = data.nextCursor;
+        if (moreBtn) moreBtn.hidden = !cursor;
+        if (!before && (!data.ideas || !data.ideas.length)) {
+          showEmpty("no sparks yet. yours could be the first one to catch.");
+        }
+      } catch (err) {
+        if (!before) showEmpty("the field's quiet for a moment — refresh to try again.");
+      } finally {
+        loading = false;
+      }
+    }
+
+    function init() {
+      if (!grid) return;
+      loadPage(null);
+      if (moreBtn) moreBtn.addEventListener("click", () => cursor && loadPage(cursor));
+    }
+
+    // called by the form on a successful submit
+    function prepend(idea, total) {
+      render([idea], "prepend");
+      setCount(total);
+    }
+
+    return { init, prepend };
+  })();
+
+  // -------------------------------------------------------------------------
+  // the interactive form — now writes a real, shared spark to /api/ideas
   // -------------------------------------------------------------------------
   function initForm() {
     const form = document.getElementById("sparkForm");
     const input = document.getElementById("sparkInput");
+    const nameInput = document.getElementById("sparkName");
     const status = document.getElementById("sparkStatus");
+    const btn = document.getElementById("sparkBtn");
     if (!form) return;
-
-    // persistent local-only count of sparks ever added (no backend, ever)
-    let total = 0;
-    try { total = parseInt(localStorage.getItem("silly_sparks") || "0", 10) || 0; } catch (_) {}
 
     const lines = [
       "added to the field. it's moving now.",
@@ -405,26 +518,59 @@
       "good. the silly ones are the only ones that move.",
     ];
 
-    form.addEventListener("submit", (ev) => {
+    function say(msg) {
+      status.textContent = msg;
+      status.classList.add("show");
+    }
+
+    form.addEventListener("submit", async (ev) => {
       ev.preventDefault();
       const val = input.value.trim();
+      const name = nameInput ? nameInput.value.trim() : "";
       if (!val) {
-        status.textContent = "even a blank thought counts — but try a word or two.";
-        status.classList.add("show");
+        say("even a blank thought counts — but try a word or two.");
         return;
       }
 
-      addUserSpark();
-      total += 1;
-      try { localStorage.setItem("silly_sparks", String(total)); } catch (_) {}
+      if (btn) { btn.disabled = true; }
+      say("sending it into the field…");
 
-      const line = lines[Math.floor(Math.random() * lines.length)];
-      status.textContent = `${line}  (${total.toLocaleString("en-US")} ${total === 1 ? "spark" : "sparks"} from this device)`;
-      status.classList.add("show");
-      input.value = "";
+      try {
+        const res = await fetch("/api/ideas", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(name ? { text: val, name } : { text: val }),
+        });
+        const data = await res.json().catch(() => ({}));
 
-      // nudge the field toward the network end so the new spark joins the "we"
-      targetProgress = Math.max(targetProgress, 0.9);
+        if (res.status === 429) {
+          say(data.error || "easy now — a few sparks at a time. try again shortly.");
+          return;
+        }
+        if (!res.ok && res.status !== 200) {
+          say(data.error || "that one didn't catch. try again?");
+          return;
+        }
+
+        // the delightful part survives: the ember still ignites + the field moves
+        addUserSpark();
+        targetProgress = Math.max(targetProgress, 0.9);
+        input.value = "";
+        if (nameInput) nameInput.value = "";
+
+        if (data.held) {
+          say(data.message || "that one's being looked at before it joins the field.");
+          return;
+        }
+
+        const line = lines[Math.floor(Math.random() * lines.length)];
+        say(line);
+        if (data.idea) nexus.prepend(data.idea, data.total || 0);
+      } catch (err) {
+        say("the connection flickered — try once more.");
+      } finally {
+        if (btn) { btn.disabled = false; }
+      }
     });
   }
 
@@ -447,6 +593,7 @@
     resize();
     initReveals();
     initForm();
+    nexus.init();
     initPointer();
     onScroll();
 
