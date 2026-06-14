@@ -18,7 +18,8 @@ const { z } = require("zod");
 // 500 and the real reason is logged server-side — never leaked to the client.
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
-  OPENAI_API_KEY: z.string().min(1),
+  GEMINI_API_KEY: z.string().min(1),
+  GEMINI_MODEL: z.string().min(1).default("gemini-2.5-flash"),
   IP_HASH_SALT: z.string().min(1),
 });
 
@@ -34,6 +35,40 @@ try {
 // Neon's HTTP driver. Tagged-template calls bind values as parameters, so
 // `${userText}` is NEVER concatenated into SQL — injection-safe by construction.
 const sql = env ? neon(env.DATABASE_URL) : null;
+
+// Self-provision the table on first use. Idempotent + cached, so it runs at most
+// once per warm instance (not per request). Lets the app stand itself up on a
+// fresh database with no separate migration step — `scripts/setup-db.js` stays
+// available for explicit/local setup but isn't required.
+let schemaReady = null;
+function ensureSchema() {
+  if (!schemaReady) {
+    schemaReady = (async () => {
+      await sql`
+        create table if not exists ideas (
+          id          uuid primary key default gen_random_uuid(),
+          text        text not null check (char_length(text) between 1 and 280),
+          name        text check (name is null or char_length(name) <= 40),
+          status      text not null default 'published'
+                      check (status in ('published','held','rejected')),
+          ip_hash     text,
+          created_at  timestamptz not null default now()
+        )
+      `;
+      await sql`
+        create index if not exists ideas_published_idx
+          on ideas (created_at desc) where status = 'published'
+      `;
+      await sql`
+        create index if not exists ideas_iphash_idx on ideas (ip_hash, created_at)
+      `;
+    })().catch((err) => {
+      schemaReady = null; // let a later request retry if this one failed
+      throw err;
+    });
+  }
+  return schemaReady;
+}
 
 // ---- Input contract: .strict() rejects any field we didn't ask for -------
 const ideaSchema = z
@@ -57,26 +92,67 @@ function hashIp(ip) {
   return crypto.createHash("sha256").update(ip + env.IP_HASH_SALT).digest("hex");
 }
 
+// Gemini has no dedicated moderation endpoint, so we point its cheap Flash
+// model at the text and have it classify, returning structured JSON {flagged}.
+const MODERATION_INSTRUCTION =
+  "You are a strict content moderator for a public wall of short, playful " +
+  "'silly ideas'. Flag the text ONLY if it contains: hate speech or slurs, " +
+  "harassment or bullying of a real person, sexual content involving minors, " +
+  "graphic sexual content, credible threats or incitement of violence, " +
+  "personal data / doxxing, or spam/scam links. Weird, dumb, absurd, or silly " +
+  "ideas are the entire point of the wall — do NOT flag those. Respond with JSON only.";
+
 // Returns true when the text should be HELD (flagged or moderation failed).
-// Fails closed: if the moderation call errors, we hold rather than publish
-// unscreened — better to delay one good idea than show one bad one to everyone.
+// Fails closed: if the call errors or returns no verdict, we hold rather than
+// publish unscreened — better to delay one good idea than show one bad one.
 async function isFlagged(parts) {
   const input = parts.filter(Boolean).join("\n").slice(0, 4000);
+  if (!input) return false;
   try {
-    const res = await fetch("https://api.openai.com/v1/moderations", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ model: "omni-moderation-latest", input }),
-    });
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${env.GEMINI_MODEL}:generateContent`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": env.GEMINI_API_KEY,
+        },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: MODERATION_INSTRUCTION }] },
+          contents: [{ role: "user", parts: [{ text: input }] }],
+          generationConfig: {
+            temperature: 0,
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "object",
+              properties: {
+                flagged: { type: "boolean" },
+                reason: { type: "string" },
+              },
+              required: ["flagged"],
+            },
+          },
+          // Let the model CLASSIFY harmful text instead of refusing to answer;
+          // our prompt is the policy, not Gemini's built-in generation filter.
+          safetySettings: [
+            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+          ],
+        }),
+      }
+    );
     if (!res.ok) {
       console.error("[ideas] moderation http", res.status);
       return true; // fail closed
     }
     const data = await res.json();
-    return Boolean(data?.results?.[0]?.flagged);
+    // If Gemini blocked the prompt outright, that's a strong signal — hold it.
+    if (data?.promptFeedback?.blockReason) return true;
+    const txt = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!txt) return true; // no verdict → fail closed
+    return Boolean(JSON.parse(txt).flagged);
   } catch (err) {
     console.error("[ideas] moderation error:", err);
     return true; // fail closed
@@ -97,6 +173,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    await ensureSchema();
     if (req.method === "GET") return await handleGet(req, res);
     if (req.method === "POST") return await handlePost(req, res);
     res.setHeader("Allow", "GET, POST");

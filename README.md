@@ -47,7 +47,7 @@ connection string.)
 | Var | Where |
 |-----|-------|
 | `DATABASE_URL` | Neon connection string (auto-set by the Vercel integration) |
-| `OPENAI_API_KEY` | OpenAI — used only for the free moderation endpoint |
+| `GEMINI_API_KEY` | Google AI Studio — Flash screens each idea ([get a key](https://aistudio.google.com/apikey)) |
 | `IP_HASH_SALT` | any long random string (`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`) |
 
 **3. Run locally** (functions need the Vercel dev runtime, not `node server.js`):
