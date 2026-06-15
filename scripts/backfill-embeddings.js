@@ -45,6 +45,12 @@ async function main() {
   if (!key) { console.error("✗ GEMINI_API_KEY missing in .env.local."); process.exit(1); }
 
   const sql = neon(url);
+
+  // self-provision the columns so the backfill works before any deploy
+  // (the serverless function's ensureSchema() also creates these in prod)
+  await sql`alter table ideas add column if not exists embedding real[]`;
+  await sql`alter table ideas add column if not exists embedded_at timestamptz`;
+
   let embedded = 0;
 
   for (;;) {
