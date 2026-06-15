@@ -28,6 +28,9 @@
   <div class="rail" aria-hidden="true"><span class="rail__fill" id="railFill"></span></div>
   <div class="phase" id="phaseLabel" aria-hidden="true">the spark</div>
 
+  <!-- Always-visible way into the shared wall, for anyone who just wants to read. -->
+  <a class="to-nexus" href="#nexus">read everyone's ideas&nbsp;↓</a>
+
   <main>
     <!-- 01 — HERO -->
     <section class="panel panel--hero" data-phase="0">
@@ -213,7 +216,7 @@
         <p class="body body--tight">
           Post-its. Hashtags. Spanx. Every one of them started exactly where you are right
           now — a thought that felt too small to matter, and one person willing to look a
-          little dumb. Type yours. Watch it join the field.
+          little dumb. Type yours — then scroll down and read everyone else's.
         </p>
 
         <form class="spark-form" id="sparkForm" autocomplete="off">
@@ -241,13 +244,14 @@
     </section>
 
     <!-- 15 — THE NEXUS (every spark anyone has added) -->
-    <section class="panel panel--nexus" data-phase="6">
+    <section id="nexus" class="panel panel--nexus" data-phase="6">
       <div class="panel__inner reveal">
-        <p class="kicker">the nexus so far</p>
-        <h2 class="display display--md">Every flake that caught.</h2>
+        <p class="kicker">the nexus — everyone's ideas</p>
+        <h2 class="display display--md">Every spark anyone's<br />dared to type.</h2>
         <p class="body body--tight">
-          These aren't ours. They're real ideas real people typed when they decided to
-          stop keeping them in their throat. <span class="nexus__count" id="nexusCount">…</span>
+          This is the wall. Every silly idea below is a real one a real person added
+          instead of deleting — yours included, the moment you send it. Read them, reread
+          them, let one set off another. <span class="nexus__count" id="nexusCount">…</span>
         </p>
 
         <div class="nexus__grid" id="nexusGrid" aria-live="polite">

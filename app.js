@@ -564,7 +564,7 @@
         }
 
         const line = lines[Math.floor(Math.random() * lines.length)];
-        say(line);
+        say(`${line}  it's on the wall now — scroll down to read the rest ↓`);
         if (data.idea) nexus.prepend(data.idea, data.total || 0);
       } catch (err) {
         say("the connection flickered — try once more.");
