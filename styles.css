@@ -374,6 +374,46 @@ main { position: relative; z-index: 3; }
   font-size: 0.95rem;
 }
 
+.nexus__hint {
+  margin: 2.2rem 0 0;
+  font-size: 0.74rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* ---- Star reveal: floating label when you hover/tap an idea-star ---- */
+.idea-tip {
+  position: fixed;
+  z-index: 7;
+  transform: translate(-50%, -100%);
+  max-width: min(80vw, 320px);
+  padding: 0.7rem 0.9rem;
+  background: rgba(10, 10, 12, 0.9);
+  border: 1px solid rgba(255, 157, 77, 0.4);
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+.idea-tip[hidden] { display: none; }
+.idea-tip__text {
+  display: block;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 1.02rem;
+  line-height: 1.4;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.idea-tip__name {
+  display: block;
+  margin-top: 0.45rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+  text-transform: lowercase;
+}
+
 .nexus__grid {
   margin-top: 2.6rem;
   display: grid;

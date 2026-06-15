@@ -40,6 +40,11 @@
   // user-added sparks (ephemeral, client-side only)
   let userSparks = [];
 
+  // idea-constellation: activation level (0..1) eased from scroll in the loop,
+  // and the cap on how many recent ideas become bright interactive stars.
+  let constActive = 0;
+  const MAX_STARS = 150;
+
   // -------------------------------------------------------------------------
   // sizing
   // -------------------------------------------------------------------------
@@ -58,6 +63,7 @@
     COUNT = Math.max(90, Math.min(360, Math.round(area / 5200)));
 
     buildParticles();
+    constellation.relayout();
   }
 
   // -------------------------------------------------------------------------
@@ -187,6 +193,9 @@
     const pf = phaseFloat(p);
     const col = fieldColor(p);
 
+    // the idea-constellation fades in over the final stretch of the scroll
+    constActive = clamp01((p - 0.8) / 0.12);
+
     ctx.clearRect(0, 0, W, H);
 
     // pointer parallax offset (subtle)
@@ -194,8 +203,8 @@
     const py = (pointer.y - 0.5);
     const parallax = pointer.active ? 18 : 0;
 
-    // connection strength ramps up in wave→network
-    const linkAlpha = clamp01((p - 0.62) / 0.3);
+    // connection strength ramps up in wave→network, then yields to the idea-stars
+    const linkAlpha = clamp01((p - 0.62) / 0.3) * (1 - 0.55 * constActive);
 
     // ---- update positions ----
     for (let i = 0; i < particles.length; i++) {
@@ -228,7 +237,8 @@
       if (born <= 0) continue;
 
       const twinkle = reduceMotion ? 1 : 0.7 + 0.3 * Math.sin(time * pt.tws + pt.twk);
-      const alpha = born * twinkle;
+      const alpha = born * twinkle * (1 - 0.55 * constActive);
+      if (alpha <= 0.01) continue;
       const r = pt.size * (0.9 + born * 0.5);
 
       // soft glow
@@ -246,6 +256,9 @@
 
     // ---- draw user sparks (ephemeral, brighter, always lit) ----
     drawUserSparks(time, col);
+
+    // ---- draw the idea-constellation on top (the finale) ----
+    constellation.draw(time);
 
     requestAnimationFrame(frame);
   }
@@ -385,6 +398,199 @@
   }
 
   // -------------------------------------------------------------------------
+  // the idea-constellation — every recent idea is a star you can read; a freshly
+  // submitted one flies up from the form and settles among the others.
+  // -------------------------------------------------------------------------
+  const constellation = (() => {
+    let stars = [];
+    let hovered = null;
+    let pinned = null;
+    let pinnedUntil = 0;
+    const tip = document.getElementById("ideaTip");
+
+    // golden-angle spiral: newest (i=0) sits near centre, warm + bright; older
+    // ideas spiral outward, cooling toward starlight and fading into depth.
+    // distribute across the sky proportional to the ACTUAL count (n), so a
+    // handful of ideas still fill the field instead of knotting in the centre.
+    function home(i, n) {
+      const cx = W * 0.5, cy = H * 0.5;
+      const golden = Math.PI * (3 - Math.sqrt(5));
+      const maxR = Math.min(W, H) * 0.44;
+      const denom = Math.max(n, 14);
+      const r = Math.max(Math.min(W, H) * 0.06, Math.sqrt(i / denom) * maxR);
+      const a = i * golden;
+      return { x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r * 0.8 };
+    }
+
+    // age (0 newest → 1 oldest) across the actual set, for the ember→starlight tint
+    function ageT(i, n) { return i / Math.max(n - 1, 1); }
+
+    function relayout() {
+      const n = stars.length;
+      for (let i = 0; i < n; i++) {
+        const h = home(i, n);
+        stars[i].hx = h.x; stars[i].hy = h.y; stars[i].t = ageT(i, n);
+      }
+    }
+
+    function makeStar(idea, i, n) {
+      const h = home(i, n);
+      return {
+        id: idea.id, text: idea.text, name: idea.name || "", created_at: idea.created_at,
+        hx: h.x, hy: h.y, x: h.x, y: h.y, vx: 0, vy: 0,
+        t: ageT(i, n), born: 1, fly: null, pulse: 0,
+      };
+    }
+
+    // (re)build from a newest-first ideas array, reusing existing star objects
+    // so positions stay stable as the list refreshes.
+    function sync(ideas) {
+      if (!ideas) return;
+      const byId = new Map(stars.map((s) => [s.id, s]));
+      const slice = ideas.slice(0, MAX_STARS);
+      const n = slice.length;
+      stars = slice.map((idea, i) => {
+        const ex = byId.get(idea.id);
+        if (ex) {
+          const h = home(i, n);
+          ex.hx = h.x; ex.hy = h.y; ex.t = ageT(i, n);
+          return ex;
+        }
+        return makeStar(idea, i, n);
+      });
+    }
+
+    // a freshly submitted idea flies in from (sx,sy) and settles near the centre
+    function add(idea, sx, sy) {
+      if (stars.some((s) => s.id === idea.id)) return; // already synced in
+      const star = makeStar(idea, 0, stars.length + 1);
+      star.pulse = 1;
+      stars.unshift(star);
+      if (stars.length > MAX_STARS) stars.pop();
+      relayout(); // sets the newcomer's home (index 0) using the new count
+      if (reduceMotion || sx == null) {
+        star.x = star.hx; star.y = star.hy;
+      } else {
+        star.x = sx; star.y = sy; star.born = 0;
+        star.fly = {
+          t: 0, sx, sy,
+          cx: (sx + star.hx) / 2 + rand(-70, 70),
+          cy: Math.min(sy, star.hy) - rand(80, 200),
+        };
+      }
+      reveal(star, 3800);
+    }
+
+    function reveal(star, ms) { pinned = star; pinnedUntil = performance.now() + ms; }
+    function setHover(star) { hovered = star; }
+
+    // nearest star to a screen point, within a forgiving radius
+    function hitTest(mx, my) {
+      let best = null, bd = 30 * 30;
+      for (let i = 0; i < stars.length; i++) {
+        const s = stars[i];
+        const dx = s.x - mx, dy = s.y - my;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < bd) { bd = d2; best = s; }
+      }
+      return best;
+    }
+
+    function showTip(star) {
+      if (!tip || !star) return;
+      tip.textContent = "";
+      const q = document.createElement("span");
+      q.className = "idea-tip__text";
+      q.textContent = star.text;
+      tip.appendChild(q);
+      const n = document.createElement("span");
+      n.className = "idea-tip__name";
+      n.textContent = star.name ? `— ${star.name}` : "— anonymous";
+      tip.appendChild(n);
+      tip.style.left = Math.max(14, Math.min(W - 14, star.x)) + "px";
+      tip.style.top = Math.max(14, star.y - 16) + "px";
+      tip.hidden = false;
+    }
+    function hideTip() { if (tip && !tip.hidden) tip.hidden = true; }
+
+    function draw(time) {
+      if (constActive <= 0.01 || !stars.length) { hideTip(); return; }
+      const now = performance.now();
+      if (pinned && now > pinnedUntil) pinned = null;
+
+      // ---- update positions ----
+      for (let i = 0; i < stars.length; i++) {
+        const s = stars[i];
+        if (s.fly) {
+          s.fly.t += reduceMotion ? 1 : 0.018;
+          const u = easeInOut(clamp01(s.fly.t));
+          const iu = 1 - u;
+          s.x = iu * iu * s.fly.sx + 2 * iu * u * s.fly.cx + u * u * s.hx;
+          s.y = iu * iu * s.fly.sy + 2 * iu * u * s.fly.cy + u * u * s.hy;
+          s.born = u;
+          if (s.fly.t >= 1) { s.fly = null; s.x = s.hx; s.y = s.hy; s.born = 1; }
+        } else {
+          s.vx = s.vx * 0.84 + (s.hx - s.x) * 0.05;
+          s.vy = s.vy * 0.84 + (s.hy - s.y) * 0.05;
+          s.x += s.vx; s.y += s.vy;
+          if (s.born < 1) s.born = clamp01(s.born + 0.04);
+        }
+        if (s.pulse > 0) s.pulse = Math.max(0, s.pulse - 0.012);
+      }
+
+      const focus = pinned || hovered;
+
+      // ---- faint links between nearby stars ----
+      ctx.lineWidth = 1;
+      for (let i = 0; i < stars.length; i++) {
+        const a = stars[i];
+        for (let j = i + 1; j < stars.length; j++) {
+          const b = stars[j];
+          const dx = a.x - b.x, dy = a.y - b.y;
+          const d2 = dx * dx + dy * dy;
+          if (d2 > 120 * 120) continue;
+          const al = (1 - Math.sqrt(d2) / 120) * 0.16 * constActive;
+          if (al <= 0.01) continue;
+          ctx.strokeStyle = `rgba(207,227,255,${al})`;
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        }
+      }
+
+      // ---- the stars ----
+      for (let i = 0; i < stars.length; i++) {
+        const s = stars[i];
+        const cr = Math.round(lerp(255, 190, s.t));
+        const cg = Math.round(lerp(170, 214, s.t));
+        const cb = Math.round(lerp(90, 255, s.t));
+        const isFocus = s === focus;
+        const baseA = (0.5 + 0.5 * (1 - s.t)) * s.born * constActive;
+        const twinkle = reduceMotion ? 1 : 0.82 + 0.18 * Math.sin(time * 1.3 + i);
+        const a = clamp01(baseA * twinkle * (isFocus ? 1.25 : 1));
+        const rad = (2.0 + (1 - s.t) * 1.8) * (1 + s.pulse * 1.2) * (isFocus ? 1.7 : 1);
+
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(${cr},${cg},${cb},${a * 0.16})`;
+        ctx.arc(s.x, s.y, rad * 5, 0, Math.PI * 2); ctx.fill();
+
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(${cr},${cg},${cb},${a})`;
+        ctx.arc(s.x, s.y, rad, 0, Math.PI * 2); ctx.fill();
+
+        if (isFocus) {
+          ctx.beginPath();
+          ctx.strokeStyle = `rgba(255,225,190,${0.6 * constActive})`;
+          ctx.lineWidth = 1.2;
+          ctx.arc(s.x, s.y, rad + 6, 0, Math.PI * 2); ctx.stroke();
+        }
+      }
+
+      if (focus) showTip(focus); else hideTip();
+    }
+
+    return { sync, add, draw, hitTest, setHover, reveal, relayout, count: () => stars.length };
+  })();
+
+  // -------------------------------------------------------------------------
   // the nexus — shared wall of ideas, read from + written to /api/ideas
   // -------------------------------------------------------------------------
   const nexus = (() => {
@@ -459,19 +665,23 @@
 
     let cursor = null;
     let loading = false;
+    let all = []; // every idea loaded so far, newest-first — drives the stars
 
     async function loadPage(before) {
       if (loading) return;
       loading = true;
       try {
+        const limit = before ? 60 : MAX_STARS;
         const url = before
-          ? `/api/ideas?limit=40&before=${encodeURIComponent(before)}`
-          : `/api/ideas?limit=40`;
+          ? `/api/ideas?limit=${limit}&before=${encodeURIComponent(before)}`
+          : `/api/ideas?limit=${limit}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error(`GET ${res.status}`);
         const data = await res.json();
         render(data.ideas, "append");
         setCount(data.total || 0);
+        all = before ? all.concat(data.ideas || []) : (data.ideas || []);
+        constellation.sync(all);
         cursor = data.nextCursor;
         if (moreBtn) moreBtn.hidden = !cursor;
         if (!before && (!data.ideas || !data.ideas.length)) {
@@ -490,10 +700,13 @@
       if (moreBtn) moreBtn.addEventListener("click", () => cursor && loadPage(cursor));
     }
 
-    // called by the form on a successful submit
-    function prepend(idea, total) {
+    // called by the form on a successful submit — adds the card, updates the
+    // count, and launches the new star flying up into the constellation.
+    function prepend(idea, total, sx, sy) {
       render([idea], "prepend");
       setCount(total);
+      all.unshift(idea);
+      constellation.add(idea, sx, sy);
     }
 
     return { init, prepend };
@@ -552,20 +765,23 @@
           return;
         }
 
-        // the delightful part survives: the ember still ignites + the field moves
-        addUserSpark();
-        targetProgress = Math.max(targetProgress, 0.9);
+        targetProgress = Math.max(targetProgress, 0.92);
         input.value = "";
         if (nameInput) nameInput.value = "";
 
         if (data.held) {
+          addUserSpark();
           say(data.message || "that one's being looked at before it joins the field.");
           return;
         }
 
+        // launch the new idea as a star flying up from the button into the sky
+        const rect = btn ? btn.getBoundingClientRect() : null;
+        const sx = rect ? rect.left + rect.width / 2 : W * 0.5;
+        const sy = rect ? rect.top + rect.height / 2 : H * 0.85;
         const line = lines[Math.floor(Math.random() * lines.length)];
-        say(`${line}  it's on the wall now — scroll down to read the rest ↓`);
-        if (data.idea) nexus.prepend(data.idea, data.total || 0);
+        say(`${line}  there it goes — that's yours, up with the rest ↑`);
+        if (data.idea) nexus.prepend(data.idea, data.total || 0, sx, sy);
       } catch (err) {
         say("the connection flickered — try once more.");
       } finally {
@@ -578,12 +794,29 @@
   // pointer parallax
   // -------------------------------------------------------------------------
   function initPointer() {
+    // pointer over real UI (cards, form, links) should never trigger star reads
+    function overUI(t) {
+      return !!(t && t.closest && t.closest(
+        ".idea-card, .spark-form, button, input, a, .footer, .nexus__more, .to-nexus"
+      ));
+    }
     window.addEventListener("pointermove", (e) => {
       pointer.x = e.clientX / W;
       pointer.y = e.clientY / H;
       pointer.active = true;
+      if (constActive < 0.25 || overUI(e.target)) { constellation.setHover(null); return; }
+      constellation.setHover(constellation.hitTest(e.clientX, e.clientY));
     }, { passive: true });
-    window.addEventListener("pointerleave", () => { pointer.active = false; });
+    window.addEventListener("pointerleave", () => {
+      pointer.active = false;
+      constellation.setHover(null);
+    });
+    // tap-to-read on touch (and click on desktop) pins a star's label briefly
+    window.addEventListener("click", (e) => {
+      if (constActive < 0.25 || overUI(e.target)) return;
+      const s = constellation.hitTest(e.clientX, e.clientY);
+      if (s) constellation.reveal(s, 4500);
+    }, { passive: true });
   }
 
   // -------------------------------------------------------------------------
@@ -599,6 +832,11 @@
 
     window.addEventListener("resize", () => { resize(); onScroll(); }, { passive: true });
     window.addEventListener("scroll", onScroll, { passive: true });
+
+    // local-only hook so the constellation can be exercised with mock data
+    if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+      window.__c = constellation;
+    }
 
     requestAnimationFrame(frame);
   }

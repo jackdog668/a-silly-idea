@@ -31,6 +31,9 @@
   <!-- Always-visible way into the shared wall, for anyone who just wants to read. -->
   <a class="to-nexus" href="#nexus">read everyone's ideas&nbsp;↓</a>
 
+  <!-- Floating label that reveals an idea when you hover or tap its star. -->
+  <div class="idea-tip" id="ideaTip" role="status" aria-live="polite" hidden></div>
+
   <main>
     <!-- 01 — HERO -->
     <section class="panel panel--hero" data-phase="0">
@@ -249,10 +252,12 @@
         <p class="kicker">the nexus — everyone's ideas</p>
         <h2 class="display display--md">Every spark anyone's<br />dared to type.</h2>
         <p class="body body--tight">
-          This is the wall. Every silly idea below is a real one a real person added
-          instead of deleting — yours included, the moment you send it. Read them, reread
-          them, let one set off another. <span class="nexus__count" id="nexusCount">…</span>
+          Each light in the field is one — a real idea a real person added instead of
+          deleting. Hover or tap a star to read it. Yours flies up here the moment you
+          send it. <span class="nexus__count" id="nexusCount">…</span>
         </p>
+
+        <p class="nexus__hint">or read every one of them ↓</p>
 
         <div class="nexus__grid" id="nexusGrid" aria-live="polite">
           <p class="nexus__empty" id="nexusEmpty">lighting the field…</p>

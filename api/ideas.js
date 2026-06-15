@@ -186,7 +186,7 @@ module.exports = async function handler(req, res) {
 
 // ---- GET: read the nexus -------------------------------------------------
 async function handleGet(req, res) {
-  const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 40, 1), 100);
+  const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 40, 1), 150);
   const before = typeof req.query.before === "string" ? req.query.before : null;
 
   // Two branches keep the tagged-template parameterization clean and safe.
