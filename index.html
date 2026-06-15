@@ -28,8 +28,8 @@
   <div class="rail" aria-hidden="true"><span class="rail__fill" id="railFill"></span></div>
   <div class="phase" id="phaseLabel" aria-hidden="true">the spark</div>
 
-  <!-- Always-visible way into the shared wall, for anyone who just wants to read. -->
-  <a class="to-nexus" href="#nexus">read everyone's ideas&nbsp;↓</a>
+  <!-- Always-visible way down into the bare constellation. -->
+  <a class="to-nexus" href="#sky">into the sky&nbsp;↓</a>
 
   <!-- Floating label that reveals an idea when you hover or tap its star. -->
   <div class="idea-tip" id="ideaTip" role="status" aria-live="polite" hidden></div>
@@ -246,26 +246,40 @@
       </div>
     </section>
 
-    <!-- 15 — THE NEXUS (every spark anyone has added) -->
-    <section id="nexus" class="panel panel--nexus" data-phase="6">
+    <!-- 15 — SKY INTRO: the ONLY place finale copy lives, ABOVE the bare sky -->
+    <section class="panel panel--sky-intro" data-phase="6">
       <div class="panel__inner reveal">
-        <p class="kicker">the nexus — everyone's ideas</p>
+        <p class="kicker">the constellation — everyone's ideas</p>
         <h2 class="display display--md">Every spark anyone's<br />dared to type.</h2>
         <p class="body body--tight">
-          Each light in the field is one — a real idea a real person added instead of
-          deleting. Hover or tap a star to read it. Yours flies up here the moment you
-          send it. <span class="nexus__count" id="nexusCount">…</span>
+          Each light below is one — a real idea a real person added instead of deleting,
+          placed near the ideas it's most like. Scroll in, then reach into the sky and
+          click any star to fall into it. <span class="sky__count" id="ideaCount">…</span>
         </p>
-
-        <p class="nexus__hint">or read every one of them ↓</p>
-
-        <div class="nexus__grid" id="nexusGrid" aria-live="polite">
-          <p class="nexus__empty" id="nexusEmpty">lighting the field…</p>
-        </div>
-
-        <button class="nexus__more" id="nexusMore" type="button" hidden>show more</button>
+        <p class="sky__cue" aria-hidden="true">scroll into the sky ↓</p>
       </div>
     </section>
+
+    <!-- 16 — THE BARE CONSTELLATION: no copy overlaid; the canvas shows through.
+         Tall scroll target; the hidden list is the accessible text path. -->
+    <section id="sky" class="panel panel--sky" data-phase="6" tabindex="-1"
+             aria-label="The idea constellation. Each star is an idea — activate one to read it.">
+      <ul class="sky__a11y-list visually-hidden" id="skyList"
+          aria-label="All ideas, newest first. Activate one to focus its star."></ul>
+    </section>
+
+    <!-- the focused-idea "page": a fixed overlay above the zoomed sky -->
+    <div class="idea-focus" id="ideaFocus" hidden role="dialog" aria-modal="false"
+         aria-labelledby="ideaFocusText" tabindex="-1">
+      <button class="idea-focus__back" id="ideaFocusBack" type="button"
+              aria-label="Back to the constellation">← back to the sky</button>
+      <div class="idea-focus__stage">
+        <blockquote class="idea-focus__text" id="ideaFocusText"></blockquote>
+        <p class="idea-focus__author" id="ideaFocusAuthor"></p>
+        <p class="idea-focus__relations" id="ideaFocusRelations" aria-live="polite"></p>
+      </div>
+      <p class="idea-focus__hint" aria-hidden="true">press esc, or click the dark to drift back out</p>
+    </div>
 
     <footer class="footer">
       <div class="footer__inner">

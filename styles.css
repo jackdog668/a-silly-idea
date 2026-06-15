@@ -354,35 +354,7 @@ main { position: relative; z-index: 3; }
   background: rgba(255, 157, 77, 0.06);
 }
 
-/* ---- The nexus: the shared wall of real ideas ---- */
-/* Clear top divider so it reads as its own destination, not a story continuation. */
-.panel--nexus {
-  min-height: 100vh;
-  min-height: 100dvh;
-  padding-bottom: clamp(5rem, 12vh, 9rem);
-  align-items: flex-start;
-  scroll-margin-top: 0;
-  border-top: 1px solid var(--line);
-}
-.panel--nexus .panel__inner { max-width: var(--maxw); }
-
-.nexus__count {
-  display: block;
-  margin-top: 0.8rem;
-  color: var(--ember);
-  font-variant-numeric: tabular-nums;
-  font-size: 0.95rem;
-}
-
-.nexus__hint {
-  margin: 2.2rem 0 0;
-  font-size: 0.74rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-
-/* ---- Star reveal: floating label when you hover/tap an idea-star ---- */
+/* ---- Star reveal: floating label when you hover an idea-star (overview) ---- */
 .idea-tip {
   position: fixed;
   z-index: 7;
@@ -414,62 +386,116 @@ main { position: relative; z-index: 3; }
   text-transform: lowercase;
 }
 
-.nexus__grid {
-  margin-top: 2.6rem;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
-  gap: 1rem;
+/* ---- Finale intro: the ONLY place finale copy lives (above the bare sky) ---- */
+.panel--sky-intro {
+  min-height: 100vh;
+  min-height: 100dvh;
+  border-top: 1px solid var(--line);
 }
-
-.nexus__empty {
-  grid-column: 1 / -1;
-  color: var(--ink-faint);
+.sky__count {
+  display: block;
+  margin-top: 0.8rem;
+  color: var(--ember);
+  font-variant-numeric: tabular-nums;
   font-size: 0.95rem;
-  letter-spacing: 0.04em;
+}
+.sky__cue {
+  margin-top: 3rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
 }
 
-.idea-card {
-  background: rgba(255, 255, 255, 0.025);
+/* ---- The bare sky: tall + empty, no copy. The fixed canvas shows through. ---- */
+.panel--sky {
+  min-height: 170vh;
+  min-height: 170dvh;
+  padding: 0;
+}
+
+/* ---- Focused-idea "page": fixed overlay floating above the zoomed canvas ---- */
+.idea-focus {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: clamp(1.25rem, 5vw, 4rem);
+  pointer-events: none;            /* clicks on the dark margin pass through → drift out */
+  opacity: 0;
+  transition: opacity 0.5s var(--ease);
+}
+.idea-focus.is-open { opacity: 1; }
+.idea-focus[hidden] { display: none; }
+.idea-focus__back,
+.idea-focus__stage { pointer-events: auto; }
+
+.idea-focus__back {
+  justify-self: start;
+  align-self: start;
+  background: rgba(10, 10, 12, 0.5);
+  backdrop-filter: blur(6px);
+  color: var(--ink-soft);
   border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 1.2rem 1.3rem 1.05rem;
-  transition: border-color 0.4s var(--ease), transform 0.4s var(--ease), background 0.4s var(--ease);
+  border-radius: 999px;
+  padding: 0.55rem 1rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: color 0.3s var(--ease), border-color 0.3s var(--ease);
 }
-.idea-card:hover {
-  border-color: rgba(255, 157, 77, 0.32);
-  background: rgba(255, 157, 77, 0.04);
-  transform: translateY(-2px);
+.idea-focus__back:hover { color: var(--ink); border-color: rgba(255, 157, 77, 0.5); }
+
+.idea-focus__stage {
+  align-self: center;
+  justify-self: center;
+  max-width: 720px;
+  text-align: center;
 }
-.idea-card__text {
+.idea-focus__text {
   margin: 0;
+  border: 0;
+  quotes: none;
   font-family: "Fraunces", Georgia, serif;
-  font-size: 1.12rem;
-  line-height: 1.45;
+  font-weight: 400;
+  font-size: clamp(1.8rem, 5vw, 3.4rem);
+  line-height: 1.18;
   color: var(--ink);
-  overflow-wrap: anywhere; /* long unbroken strings can't blow out the card */
+  overflow-wrap: anywhere;
 }
-.idea-card__meta {
-  margin: 0.85rem 0 0;
+.idea-focus__author {
+  margin: 1.6rem 0 0;
+  font-size: 0.85rem;
+  letter-spacing: 0.18em;
+  text-transform: lowercase;
+  color: var(--ember);
+}
+.idea-focus__relations {
+  margin: 0.6rem 0 0;
   font-size: 0.74rem;
   letter-spacing: 0.06em;
   color: var(--ink-faint);
-  text-transform: lowercase;
 }
-.idea-card__name { color: var(--ink-soft); }
+.idea-focus__hint {
+  justify-self: center;
+  align-self: end;
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  opacity: 0.7;
+}
 
-.nexus__more {
-  margin-top: 2rem;
-  background: transparent;
-  color: var(--ink-soft);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 0.8rem 1.4rem;
-  font-family: inherit;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: border-color 0.4s var(--ease), color 0.4s var(--ease);
+/* the focused idea text breathes — paused under reduced-motion */
+@keyframes ideaBreath {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.97; }
+  50%      { transform: translateY(-4px) scale(1.012); opacity: 1; }
 }
-.nexus__more:hover { border-color: rgba(255, 157, 77, 0.5); color: var(--ink); }
+.idea-focus.is-open .idea-focus__text { animation: ideaBreath 6s var(--ease) infinite; }
+
+@media (max-width: 768px) { .idea-focus__stage { padding: 0 0.5rem; } }
 
 /* ---- Footer ---- */
 .footer {
@@ -511,4 +537,20 @@ main { position: relative; z-index: 3; }
   .reveal { transition: opacity 0.6s ease; transform: none; }
   .cue__line::after { animation: none; }
   * { scroll-behavior: auto !important; }
+  .idea-focus { transition: opacity 0.2s ease; }
+  .idea-focus.is-open .idea-focus__text { animation: none; }
+  /* with motion off, the dot field is hard to use — surface the list as a real,
+     readable column of focusable ideas instead. */
+  .sky__a11y-list.visually-hidden {
+    position: static; width: auto; height: auto; clip: auto;
+    margin: 2rem auto 0; max-width: var(--maxw);
+    display: grid; gap: 0.9rem; padding: 0 var(--pad);
+  }
+  .sky__a11y-list li { list-style: none; }
+  .sky__a11y-list li button {
+    background: transparent; border: 0; text-align: left; cursor: pointer;
+    color: var(--ink-soft); font-family: "Fraunces", Georgia, serif; font-size: 1.05rem;
+    line-height: 1.4; padding: 0;
+  }
+  .sky__a11y-list li button:hover { color: var(--ink); }
 }
