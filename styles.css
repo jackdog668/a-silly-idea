@@ -449,10 +449,23 @@ main { position: relative; z-index: 3; }
 .idea-focus__back:hover { color: var(--ink); border-color: rgba(255, 157, 77, 0.5); }
 
 .idea-focus__stage {
+  position: relative;
   align-self: center;
   justify-self: center;
   max-width: 720px;
   text-align: center;
+}
+/* soft dark scrim so the idea reads against the sky — no hard card edge */
+.idea-focus__stage::before {
+  content: "";
+  position: absolute;
+  inset: -45% -28%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center,
+    rgba(8, 8, 10, 0.82) 0%,
+    rgba(8, 8, 10, 0.55) 42%,
+    rgba(8, 8, 10, 0) 72%);
 }
 .idea-focus__text {
   margin: 0;
@@ -464,19 +477,22 @@ main { position: relative; z-index: 3; }
   line-height: 1.18;
   color: var(--ink);
   overflow-wrap: anywhere;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.9), 0 0 60px rgba(0, 0, 0, 0.7);
 }
 .idea-focus__author {
   margin: 1.6rem 0 0;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   letter-spacing: 0.18em;
   text-transform: lowercase;
   color: var(--ember);
+  text-shadow: 0 1px 16px rgba(0, 0, 0, 0.95);
 }
 .idea-focus__relations {
   margin: 0.6rem 0 0;
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   letter-spacing: 0.06em;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
+  text-shadow: 0 1px 16px rgba(0, 0, 0, 0.95);
 }
 .idea-focus__hint {
   justify-self: center;
@@ -504,6 +520,8 @@ main { position: relative; z-index: 3; }
   padding: clamp(4rem, 10vh, 8rem) var(--pad) clamp(3rem, 8vh, 6rem);
   border-top: 1px solid var(--line);
 }
+/* keep the dive clean — page chrome fades out while a star is focused */
+body.sky-focused .footer { opacity: 0; pointer-events: none; transition: opacity 0.4s var(--ease); }
 .footer__inner { max-width: var(--maxw); margin: 0 auto; }
 .footer__mark {
   font-family: "Fraunces", Georgia, serif;

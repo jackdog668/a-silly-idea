@@ -43,6 +43,10 @@
   // idea-constellation: activation level (0..1) eased from scroll in the loop,
   // and the cap on how many recent ideas become bright interactive stars.
   let constActive = 0;
+  // focus-fade (0 overview → 1 fully zoomed into a star); the constellation
+  // sets it from the camera each frame, the loop uses it to dim the ambient
+  // field so a focused idea sits clean and readable on near-black.
+  let constFocusFade = 0;
   const MAX_STARS = 150;
 
   // -------------------------------------------------------------------------
@@ -196,6 +200,11 @@
     // the idea-constellation fades in over the final stretch of the scroll
     constActive = clamp01((p - 0.8) / 0.12);
 
+    // fade the scroll rail + phase label out so the bare sky is full-bleed
+    const chromeFade = (1 - clamp01(constActive * 1.5)).toFixed(2);
+    if (railEl) railEl.style.opacity = chromeFade;
+    if (phaseLabel) phaseLabel.style.opacity = chromeFade;
+
     ctx.clearRect(0, 0, W, H);
 
     // pointer parallax offset (subtle)
@@ -203,9 +212,9 @@
     const py = (pointer.y - 0.5);
     const parallax = pointer.active ? 18 : 0;
 
-    // connection strength ramps up in wave→network, then the ambient web
-    // almost fully clears so the finale is the idea-constellation ALONE.
-    const linkAlpha = clamp01((p - 0.62) / 0.3) * (1 - 0.97 * constActive);
+    // the ambient web stays PRESENT in the finale (the big constellation you
+    // roam) and only fades right out when you dive into a single star.
+    const linkAlpha = clamp01((p - 0.62) / 0.3) * (1 - 0.55 * constActive) * (1 - 0.95 * constFocusFade);
 
     // ---- update positions ----
     for (let i = 0; i < particles.length; i++) {
@@ -238,8 +247,9 @@
       if (born <= 0) continue;
 
       const twinkle = reduceMotion ? 1 : 0.7 + 0.3 * Math.sin(time * pt.tws + pt.twk);
-      // the story's particles dissolve to a faint dust behind the idea-stars
-      const alpha = born * twinkle * (1 - 0.9 * constActive);
+      // ambient particles remain as the rich constellation backdrop in the
+      // finale, then fade out when you dive into a star.
+      const alpha = born * twinkle * (1 - 0.45 * constActive) * (1 - 0.9 * constFocusFade);
       if (alpha <= 0.01) continue;
       const r = pt.size * (0.9 + born * 0.5);
 
@@ -354,6 +364,7 @@
   // scroll → progress, plus UI side-effects (rail, counter, phase label)
   // -------------------------------------------------------------------------
   const railFill = document.getElementById("railFill");
+  const railEl = document.querySelector(".rail");
   const counterEl = document.getElementById("counter");
   const phaseLabel = document.getElementById("phaseLabel");
 
@@ -649,6 +660,8 @@
     function syncFocusUI() {
       if (view === "flying-in" && Math.abs(cam.zoom - FOCUS_ZOOM) < 0.05) view = "focused";
       if (view === "flying-out" && cam.zoom < 1.05) { view = "overview"; finishCloseFocusUI(); }
+      // hide page chrome (footer) while diving into a star
+      document.body.classList.toggle("sky-focused", view !== "overview");
       const panel = el("ideaFocus");
       if (!panel) return;
       const show = (view === "focused" || view === "flying-in") && cam.zoom >= ZOOM_OPEN_PANEL;
@@ -691,6 +704,8 @@
       cam.zoom += (cam.tZoom - cam.zoom) * ck;
       cam.x += (cam.tx - cam.x) * ck;
       cam.y += (cam.ty - cam.y) * ck;
+      // how "dived in" we are — the loop fades the ambient field out by this
+      constFocusFade = clamp01((cam.zoom - 1) / (FOCUS_ZOOM - 1));
       syncFocusUI();
 
       ctx.save();
